@@ -48,3 +48,6 @@ workspace/**/.venv
 workspace/**/.next
 logs/
 __pycache__/
+
+.env
+
