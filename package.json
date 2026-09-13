@@ -1,0 +1,11 @@
+{
+  "name": "forgelink",
+  "private": true,
+  "version": "0.1.0",
+  "scripts": {
+    "dev:web": "npm --prefix apps/web run dev",
+    "build:web": "npm --prefix apps/web run build",
+    "dev:orchestrator": "bash scripts/start-orchestrator.sh",
+    "dev:sandbox": "bash scripts/start-sandbox.sh"
+  }
+}
