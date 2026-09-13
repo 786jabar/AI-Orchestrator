@@ -228,6 +228,8 @@ export default function App() {
             dirty={dirty}
             onChange={setContent}
             onSave={saveFile}
+            onRun={runSandbox}
+            runBusy={runBusy}
           />
           <div className="side-stack">
             <ChatPanel

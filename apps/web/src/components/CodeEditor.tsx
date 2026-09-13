@@ -6,6 +6,8 @@ interface Props {
   dirty: boolean;
   onChange: (value: string) => void;
   onSave: () => void;
+  onRun?: () => void;
+  runBusy?: boolean;
 }
 
 function languageFor(path: string | null): string {
@@ -19,7 +21,15 @@ function languageFor(path: string | null): string {
   return "plaintext";
 }
 
-export function CodeEditor({ path, content, dirty, onChange, onSave }: Props) {
+export function CodeEditor({
+  path,
+  content,
+  dirty,
+  onChange,
+  onSave,
+  onRun,
+  runBusy,
+}: Props) {
   return (
     <div className="editor-wrap">
       <div className="editor-toolbar">
@@ -27,6 +37,11 @@ export function CodeEditor({ path, content, dirty, onChange, onSave }: Props) {
         <button type="button" className="btn" onClick={onSave} disabled={!path || !dirty}>
           Save
         </button>
+        {onRun ? (
+          <button type="button" className="btn btn-primary" onClick={onRun} disabled={runBusy}>
+            {runBusy ? "Running…" : "Run sandbox"}
+          </button>
+        ) : null}
       </div>
       <div style={{ flex: 1, minHeight: 0 }}>
         <Editor
