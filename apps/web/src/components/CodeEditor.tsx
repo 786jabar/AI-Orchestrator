@@ -43,7 +43,7 @@ export function CodeEditor({
           </button>
         ) : null}
       </div>
-      <div style={{ flex: 1, minHeight: 0 }}>
+      <div className="monaco-host">
         <Editor
           height="100%"
           theme="vs-dark"

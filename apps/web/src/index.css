@@ -311,6 +311,13 @@ button {
   display: flex;
   flex-direction: column;
   border-right: 1px solid var(--line);
+  overflow: hidden;
+}
+
+.editor-wrap .monaco-host {
+  flex: 1;
+  min-height: 220px;
+  position: relative;
 }
 
 .editor-toolbar {
