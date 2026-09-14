@@ -8,3 +8,4 @@ python-multipart==0.0.20
 cryptography==44.0.0
 aiosqlite==0.20.0
 greenlet==3.1.1
+sse-starlette==2.2.1

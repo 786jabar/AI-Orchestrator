@@ -87,6 +87,9 @@ class TaskCreate(BaseModel):
     provider_override: Optional[AiProvider] = None
     target_path: Optional[str] = None
     auto_run: bool = True
+    require_approval: bool = False
+    use_tools: bool = True
+    auto_improve: bool = False
 
 
 class TaskOut(BaseModel):
@@ -102,6 +105,9 @@ class TaskOut(BaseModel):
     result: str
     error: str
     target_path: Optional[str]
+    quality_score: float = 0.0
+    tool_trace: str = ""
+    diff_summary: str = ""
     created_at: datetime
     started_at: Optional[datetime]
     completed_at: Optional[datetime]
@@ -132,3 +138,50 @@ class RunResult(BaseModel):
     stderr: str
     command: str
     duration_ms: int
+
+
+class SnapshotCreate(BaseModel):
+    label: str = "manual snapshot"
+
+
+class SnapshotOut(BaseModel):
+    id: int
+    project_id: int
+    label: str
+    source: str
+    file_count: int
+    created_at: datetime
+    restored_at: Optional[datetime] = None
+
+    model_config = {"from_attributes": True}
+
+
+class MemoryMessageOut(BaseModel):
+    id: int
+    project_id: int
+    role: str
+    content: str
+    provider: Optional[str] = None
+    task_id: Optional[int] = None
+    created_at: datetime
+
+    model_config = {"from_attributes": True}
+
+
+class PendingChangeOut(BaseModel):
+    id: int
+    project_id: int
+    task_id: Optional[int]
+    path: str
+    action: str
+    before_content: str
+    after_content: str
+    diff_text: str
+    status: str
+    created_at: datetime
+
+    model_config = {"from_attributes": True}
+
+
+class AdvancedTaskCreate(TaskCreate):
+    mode: str = "single"  # single | pipeline

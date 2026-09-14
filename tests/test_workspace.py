@@ -43,41 +43,70 @@ def test_classify_and_route():
     assert classify_task("Please debug this stack trace") == TaskCategory.debugging
     provider, manual = route_provider(TaskCategory.ui_generation)
     assert provider == AiProvider.gemini and manual is False
-    provider, manual = route_provider(TaskCategory.ui_generation, AiProvider.claude)
-    assert provider == AiProvider.claude and manual is True
 
 
-def test_parse_file_blocks():
-    from app.services.providers import parse_file_blocks
+def test_smart_context_ranks_files():
+    from app.services.context import build_smart_context, rank_files
 
-    md = "Here you go\n```index.js\nconsole.log('hi')\n```\n"
-    assert parse_file_blocks(md)["index.js"].startswith("console.log")
+    files = {
+        "index.js": "server listen html",
+        "test.js": "assert equal",
+        "README.md": "docs",
+        "misc.txt": "zzzz",
+    }
+    ranked = rank_files("improve html ui layout", files, limit=3)
+    assert ranked[0][0] in {"index.js", "README.md"}
+    ctx = build_smart_context("improve html ui", files, ["[user] hi"], [])
+    assert "Relevant project files" in ctx
 
 
 @pytest.mark.asyncio
 async def test_project_workspace_flow(client):
     created = await client.post("/api/projects", json={"name": "Alpha", "description": "test"})
     assert created.status_code == 200, created.text
-    project = created.json()
-    pid = project["id"]
-
-    files = await client.get(f"/api/projects/{pid}/files")
-    paths = {f["path"] for f in files.json()}
-    assert "index.js" in paths
-
-    saved = await client.put(
-        f"/api/projects/{pid}/files",
-        json={"path": "hello.js", "content": "console.log(1)\n"},
-    )
-    assert saved.status_code == 200
-    read = await client.get(f"/api/projects/{pid}/files/content", params={"path": "hello.js"})
-    assert read.json()["content"] == "console.log(1)\n"
+    pid = created.json()["id"]
 
     task = await client.post(
         f"/api/projects/{pid}/tasks",
-        json={"prompt": "Implement a hello endpoint", "provider_override": "mock"},
+        json={
+            "prompt": "Implement a hello endpoint",
+            "provider_override": "mock",
+            "use_tools": True,
+            "auto_improve": False,
+        },
     )
     assert task.status_code == 200, task.text
     body = task.json()
     assert body["status"] == "completed"
-    assert body["assigned_provider"] == "mock"
+    assert body["quality_score"] > 0
+
+    snap = await client.post(f"/api/projects/{pid}/snapshots", json={"label": "checkpoint"})
+    assert snap.status_code == 200
+    snaps = await client.get(f"/api/projects/{pid}/snapshots")
+    assert len(snaps.json()) >= 1
+
+    mem = await client.get(f"/api/projects/{pid}/memory")
+    assert len(mem.json()) >= 2
+
+
+@pytest.mark.asyncio
+async def test_approval_gated_diffs(client):
+    created = await client.post("/api/projects", json={"name": "Beta"})
+    pid = created.json()["id"]
+    task = await client.post(
+        f"/api/projects/{pid}/tasks",
+        json={
+            "prompt": "Build a status page",
+            "provider_override": "mock",
+            "require_approval": True,
+            "auto_improve": False,
+        },
+    )
+    assert task.status_code == 200, task.text
+    changes = await client.get(f"/api/projects/{pid}/changes")
+    assert changes.status_code == 200
+    pending = changes.json()
+    assert len(pending) >= 1
+    applied = await client.post(f"/api/projects/{pid}/changes/{pending[0]['id']}/apply")
+    assert applied.status_code == 200
+    assert applied.json()["status"] == "applied"

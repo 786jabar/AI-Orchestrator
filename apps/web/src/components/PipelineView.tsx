@@ -21,6 +21,9 @@ export function PipelineView({ tasks }: Props) {
               <div className="pipe-sub">
                 {task.category.replaceAll("_", " ")} · {task.status}
                 {task.manual_override ? " · override" : ""}
+                {typeof task.quality_score === "number" && task.quality_score > 0
+                  ? ` · ${task.quality_score.toFixed(2)}`
+                  : ""}
               </div>
             </div>
             <span className={`provider ${task.assigned_provider}`}>{task.assigned_provider}</span>

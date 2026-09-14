@@ -20,7 +20,7 @@ async def lifespan(_: FastAPI):
     yield
 
 
-app = FastAPI(title="AI Orchestrator", version="0.1.0", lifespan=lifespan)
+app = FastAPI(title="ForgeLink AI Orchestrator", version="0.2.0", lifespan=lifespan)
 settings = get_settings()
 app.add_middleware(
     CORSMiddleware,

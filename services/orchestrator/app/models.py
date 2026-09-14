@@ -119,6 +119,9 @@ class Task(Base):
     result: Mapped[str] = mapped_column(Text, default="")
     error: Mapped[str] = mapped_column(Text, default="")
     target_path: Mapped[str | None] = mapped_column(String(512), nullable=True)
+    quality_score: Mapped[float] = mapped_column(default=0.0)
+    tool_trace: Mapped[str] = mapped_column(Text, default="")
+    diff_summary: Mapped[str] = mapped_column(Text, default="")
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
     started_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     completed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
@@ -126,3 +129,43 @@ class Task(Base):
     project: Mapped[Project] = relationship(back_populates="tasks")
     children: Mapped[list["Task"]] = relationship(back_populates="parent")
     parent: Mapped["Task | None"] = relationship(back_populates="children", remote_side=[id])
+
+
+class ConversationMessage(Base):
+    __tablename__ = "conversation_messages"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    project_id: Mapped[int] = mapped_column(ForeignKey("projects.id", ondelete="CASCADE"), index=True)
+    role: Mapped[str] = mapped_column(String(40))
+    content: Mapped[str] = mapped_column(Text)
+    provider: Mapped[str | None] = mapped_column(String(40), nullable=True)
+    task_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+
+class ProjectSnapshot(Base):
+    __tablename__ = "project_snapshots"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    project_id: Mapped[int] = mapped_column(ForeignKey("projects.id", ondelete="CASCADE"), index=True)
+    label: Mapped[str] = mapped_column(String(200))
+    source: Mapped[str] = mapped_column(String(40), default="manual")
+    file_count: Mapped[int] = mapped_column(Integer, default=0)
+    payload_json: Mapped[str] = mapped_column(Text, default="{}")
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    restored_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+
+
+class PendingChange(Base):
+    __tablename__ = "pending_changes"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    project_id: Mapped[int] = mapped_column(ForeignKey("projects.id", ondelete="CASCADE"), index=True)
+    task_id: Mapped[int | None] = mapped_column(ForeignKey("tasks.id", ondelete="SET NULL"), nullable=True)
+    path: Mapped[str] = mapped_column(String(512))
+    action: Mapped[str] = mapped_column(String(20), default="update")
+    before_content: Mapped[str] = mapped_column(Text, default="")
+    after_content: Mapped[str] = mapped_column(Text, default="")
+    diff_text: Mapped[str] = mapped_column(Text, default="")
+    status: Mapped[str] = mapped_column(String(20), default="pending")
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())

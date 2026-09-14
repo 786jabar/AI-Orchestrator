@@ -5,8 +5,14 @@ interface Props {
   prompt: string;
   provider: AiProvider | "auto";
   busy: boolean;
+  requireApproval: boolean;
+  autoImprove: boolean;
+  useTools: boolean;
   onPromptChange: (v: string) => void;
   onProviderChange: (v: AiProvider | "auto") => void;
+  onToggleApproval: (v: boolean) => void;
+  onToggleImprove: (v: boolean) => void;
+  onToggleTools: (v: boolean) => void;
   onSubmit: (mode: "single" | "pipeline") => void;
 }
 
@@ -15,8 +21,14 @@ export function ChatPanel({
   prompt,
   provider,
   busy,
+  requireApproval,
+  autoImprove,
+  useTools,
   onPromptChange,
   onProviderChange,
+  onToggleApproval,
+  onToggleImprove,
+  onToggleTools,
   onSubmit,
 }: Props) {
   const recent = [...tasks].reverse().slice(0, 8);
@@ -30,10 +42,10 @@ export function ChatPanel({
       <div className="chat-log">
         {recent.length === 0 && (
           <div className="bubble">
-            <div className="meta">ForgeLink</div>
+            <div className="meta">ForgeLink Advanced</div>
             <pre>
-              Describe what to build. Tasks are classified and routed to Claude, GPT, or Gemini.
-              Without API keys, a mock provider still exercises the full loop.
+              Tool-using agents, critic scoring, auto-improve, approval-gated diffs, snapshots, and
+              live SSE telemetry — all on one shared workspace.
             </pre>
           </div>
         )}
@@ -43,8 +55,14 @@ export function ChatPanel({
               <span className={`provider ${task.assigned_provider}`}>{task.assigned_provider}</span>
               <span>{task.category.replace("_", " ")}</span>
               <span>{task.status}</span>
+              {typeof task.quality_score === "number" && task.quality_score > 0 ? (
+                <span>score {task.quality_score.toFixed(2)}</span>
+              ) : null}
             </div>
             <pre>{task.result || task.prompt}</pre>
+            {task.tool_trace ? (
+              <pre className="tool-trace">{task.tool_trace.slice(0, 1200)}</pre>
+            ) : null}
             {task.error ? <pre className="error">{task.error}</pre> : null}
           </div>
         ))}
@@ -55,6 +73,32 @@ export function ChatPanel({
           onChange={(e) => onPromptChange(e.target.value)}
           placeholder="Build a tiny HTTP status page with a refresh button…"
         />
+        <div className="toggle-row">
+          <label>
+            <input
+              type="checkbox"
+              checked={useTools}
+              onChange={(e) => onToggleTools(e.target.checked)}
+            />
+            Tools
+          </label>
+          <label>
+            <input
+              type="checkbox"
+              checked={autoImprove}
+              onChange={(e) => onToggleImprove(e.target.checked)}
+            />
+            Auto-improve
+          </label>
+          <label>
+            <input
+              type="checkbox"
+              checked={requireApproval}
+              onChange={(e) => onToggleApproval(e.target.checked)}
+            />
+            Approve diffs
+          </label>
+        </div>
         <div className="chat-actions">
           <select
             value={provider}
