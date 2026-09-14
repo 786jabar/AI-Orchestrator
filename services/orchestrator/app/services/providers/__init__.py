@@ -52,6 +52,130 @@ test('forge link smoke', () => {{
 """
             return AiResponse(content=content, provider=self.name, model="mock-v2")
 
+        # Rich demo app: PulseBoard / team status board
+        if any(k in lower for k in ("pulseboard", "team status", "teammates", "live team", "status board")):
+            content = """I'll implement a complete PulseBoard team status app in `index.js`.
+
+```index.js
+const http = require("http");
+
+const PORT = process.env.PORT || 3000;
+
+const TEAM = [
+  { name: "Ava Chen", role: "Product", status: "online" },
+  { name: "Jordan Lee", role: "Engineering", status: "busy" },
+  { name: "Sam Ortiz", role: "Design", status: "away" },
+  { name: "Riley Kim", role: "Support", status: "online" },
+];
+
+const STATUSES = ["online", "busy", "away"];
+
+function render(team) {
+  const cards = team
+    .map(
+      (m) => `
+      <article class="card">
+        <div class="avatar">${m.name.split(" ").map((p) => p[0]).join("")}</div>
+        <div class="meta">
+          <h2>${m.name}</h2>
+          <p>${m.role}</p>
+        </div>
+        <span class="pill ${m.status}">${m.status}</span>
+      </article>`
+    )
+    .join("");
+
+  return `<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>PulseBoard</title>
+  <style>
+    :root { color-scheme: dark; }
+    body {
+      margin: 0; min-height: 100vh; font-family: "Segoe UI", Georgia, serif;
+      background:
+        radial-gradient(900px 400px at 10% -10%, rgba(61,214,198,.18), transparent 55%),
+        linear-gradient(160deg, #071216, #0b1c22 50%, #10262e);
+      color: #e8f2f0;
+    }
+    main { max-width: 880px; margin: 0 auto; padding: 2.5rem 1.25rem 3rem; }
+    header h1 { margin: 0; font-size: 2.4rem; letter-spacing: -0.03em; color: #3dd6c6; }
+    header p { margin: .45rem 0 1.5rem; color: #8aa3a8; }
+    .actions { display: flex; gap: .6rem; margin-bottom: 1.25rem; }
+    button {
+      border: 0; border-radius: 10px; padding: .7rem 1rem; font-weight: 650; cursor: pointer;
+      background: linear-gradient(135deg, #2bbbad, #3dd6c6); color: #042026;
+    }
+    .grid { display: grid; gap: .85rem; }
+    .card {
+      display: grid; grid-template-columns: 52px 1fr auto; gap: .85rem; align-items: center;
+      padding: 1rem 1.1rem; border-radius: 14px; border: 1px solid rgba(125,211,198,.18);
+      background: rgba(12, 28, 34, .82);
+    }
+    .avatar {
+      width: 52px; height: 52px; border-radius: 12px; display: grid; place-items: center;
+      background: #18333d; color: #3dd6c6; font-weight: 700;
+    }
+    .meta h2 { margin: 0; font-size: 1.05rem; }
+    .meta p { margin: .2rem 0 0; color: #8aa3a8; font-size: .9rem; }
+    .pill {
+      text-transform: uppercase; letter-spacing: .06em; font-size: .68rem; font-weight: 700;
+      padding: .35rem .65rem; border-radius: 999px;
+    }
+    .pill.online { background: rgba(90,214,125,.18); color: #5ad67d; }
+    .pill.busy { background: rgba(240,180,41,.18); color: #f0b429; }
+    .pill.away { background: rgba(160,174,192,.18); color: #a0aec0; }
+  </style>
+</head>
+<body>
+  <main>
+    <header>
+      <h1>PulseBoard</h1>
+      <p>Live team pulse</p>
+    </header>
+    <div class="actions">
+      <button id="refresh" type="button">Refresh statuses</button>
+    </div>
+    <section class="grid" id="board">${cards}</section>
+  </main>
+  <script>
+    const statuses = ${JSON.stringify(STATUSES)};
+    const board = document.getElementById("board");
+    function shuffle() {
+      const pills = [...board.querySelectorAll(".pill")];
+      pills.forEach((el) => {
+        const next = statuses[Math.floor(Math.random() * statuses.length)];
+        el.className = "pill " + next;
+        el.textContent = next;
+      });
+    }
+    document.getElementById("refresh").addEventListener("click", shuffle);
+  </script>
+</body>
+</html>`;
+}
+
+const html = render(TEAM);
+
+if (process.env.FORGELINK_ONCE === "1") {
+  process.stdout.write(html);
+  process.exit(0);
+}
+
+const server = http.createServer((req, res) => {
+  res.writeHead(200, { "Content-Type": "text/html; charset=utf-8" });
+  res.end(html);
+});
+
+server.listen(PORT, () => console.log(`PulseBoard listening on ${PORT}`));
+```
+
+Explanation: Complete PulseBoard app with teammate cards, status pills, and client-side refresh.
+"""
+            return AiResponse(content=content, provider=self.name, model="mock-pulseboard-v1")
+
         match = re.search(r"file[:\s]+([\\w./-]+)", task, re.I)
         if match:
             target = match.group(1)
